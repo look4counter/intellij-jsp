@@ -1,0 +1,51 @@
+<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
+<idea-plugin>
+    <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
+    <id>com.look4counter.intellij-jsp</id>
+
+    <!-- Public plugin name should be written in Title Case.
+     Guidelines: https://plugins.jetbrains.com/docs/marketplace/best-practices-for-listing.html#plugin-name -->
+    <name>Intellij-jsp</name>
+
+    <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
+    <vendor url="https://www.yourcompany.com">YourCompany</vendor>
+
+    <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/best-practices-for-listing.html#plugin-description -->
+    <description><![CDATA[
+        JSP 파일을 기본 텍스트 에디터에서 열고 편집·저장할 수 있습니다.<br>
+        기존 HTML 강조기와 사용 가능한 JavaScript·CSS 강조기를 재사용하고 JSP 구문을 구분합니다.<br>
+        IntelliJ IDEA 2026.1 무료 기능 환경에서 HTML 및 사용 가능한 JS·CSS 자동완성을 재사용합니다.<br>
+        JSP 자바 영역에 기존 Java 자동완성·구문강조·포매터를 연결하며 페이지 import와 내장 객체 문맥을 제공합니다.
+        ]]></description>
+
+    <!-- Product and plugin compatibility requirements.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.xml</depends>
+    <depends>com.intellij.java</depends>
+
+    <resource-bundle>messages.MyMessageBundle</resource-bundle>
+
+    <!-- Extensions defined by the plugin.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
+    <extensions defaultExtensionNs="com.intellij">
+        <gotoDeclarationHandler implementation="com.look4counter.jsp.JspGotoDeclarationHandler" order="first"/>
+        <completion.contributor language="CommunityJSP" implementationClass="com.look4counter.jsp.JspDirectiveCompletionContributor"/>
+        <multiHostInjector implementation="com.look4counter.jsp.JspJavaInjector"/>
+        <preFormatProcessor implementation="com.look4counter.jsp.JspJavaPreFormatProcessor"/>
+        <fileType name="Community JSP" implementationClass="com.look4counter.jsp.JspFileType"
+                  fieldName="INSTANCE" language="CommunityJSP" extensions="jsp;jspf"/>
+        <editorHighlighterProvider filetype="Community JSP"
+                                   implementationClass="com.look4counter.jsp.JspEditorHighlighterProvider"/>
+        <lang.parserDefinition language="CommunityJSP"
+                               implementationClass="com.look4counter.jsp.JspParserDefinition"/>
+        <lang.formatter language="CommunityJSP"
+                        implementationClass="com.look4counter.jsp.JspFormattingModelBuilder"/>
+        <lang.fileViewProviderFactory language="CommunityJSP"
+                                      implementationClass="com.look4counter.jsp.JspFileViewProviderFactory"/>
+        <toolWindow id="MyToolWindow" factoryClass="com.look4counter.MyToolWindowFactory"
+                    icon="AllIcons.Toolwindows.ToolWindowPalette"/>
+    </extensions>
+
+</idea-plugin>
