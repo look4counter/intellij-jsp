@@ -8,7 +8,8 @@ import com.intellij.psi.PsiFileFactory
 import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.impl.source.tree.injected.InjectionBackgroundSuppressor
 
-open class JspJavaInjectionHost(node: ASTNode) : ASTWrapperPsiElement(node), PsiLanguageInjectionHost {
+class JspJavaInjectionHost(node: ASTNode) : ASTWrapperPsiElement(node), PsiLanguageInjectionHost,
+    InjectionBackgroundSuppressor {
     val kind get() = node.firstChildNode.elementType
     val bodyRange: TextRange
         get() {
@@ -27,5 +28,3 @@ open class JspJavaInjectionHost(node: ASTNode) : ASTWrapperPsiElement(node), Psi
         return replace(replacement) as PsiLanguageInjectionHost
     }
 }
-
-class JspDeclarationInjectionHost(node: ASTNode) : JspJavaInjectionHost(node), InjectionBackgroundSuppressor

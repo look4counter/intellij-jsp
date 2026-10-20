@@ -14,16 +14,16 @@ class JspDeclarationBackgroundTest : BasePlatformTestCase() {
         val hosts = myFixture.file.children.filterIsInstance<JspJavaInjectionHost>()
         assertEquals(4, hosts.size)
         for (host in hosts) {
-            assertEquals(host.text, host.kind != JspTokenTypes.DECLARATION,
-                InjectedLanguageUtil.isHighlightInjectionBackground(host))
+            assertFalse(host.text, InjectedLanguageUtil.isHighlightInjectionBackground(host))
             val injected = InjectedLanguageManager.getInstance(project).getInjectedPsiFiles(host)
             assertTrue(host.text, injected.orEmpty().any { it.first is PsiJavaFile })
         }
         assertEquals(source, myFixture.editor.document.text)
     }
 
-    fun testEmptyAndUnterminatedDeclarations() {
-        for (source in listOf("<%! %>", "<%!", "<%! int count;")) {
+    fun testEmptyAndUnterminatedJavaRegions() {
+        for (source in listOf("<%! %>", "<%!", "<%! int count;",
+            "<% %>", "<%", "<% int count;", "<%= %>", "<%=", "<%= 1")) {
             myFixture.configureByText(JspFileType.INSTANCE, source)
             val host = myFixture.file.children.filterIsInstance<JspJavaInjectionHost>().single()
             assertFalse(source, InjectedLanguageUtil.isHighlightInjectionBackground(host))
@@ -31,13 +31,16 @@ class JspDeclarationBackgroundTest : BasePlatformTestCase() {
         }
     }
 
-    fun testUpdatedDeclarationKeepsBackgroundPolicy() {
-        myFixture.configureByText(JspFileType.INSTANCE, "<%! int count; %>")
-        val host = myFixture.file.children.filterIsInstance<JspJavaInjectionHost>().single()
-        WriteCommandAction.runWriteCommandAction(project) {
-            val replacement = host.updateText("<%! int count = 2; %>")
-            assertFalse(InjectedLanguageUtil.isHighlightInjectionBackground(replacement))
-            assertEquals("<%! int count = 2; %>", replacement.text)
+    fun testUpdatedJavaRegionsKeepBackgroundPolicy() {
+        for (source in listOf("<%! int count = 2; %>", "<% int count = 2; %>", "<%= 2 %>")) {
+            myFixture.configureByText(JspFileType.INSTANCE, source)
+            val host = myFixture.file.children.filterIsInstance<JspJavaInjectionHost>().single()
+            val updated = source.replace("2", "3")
+            WriteCommandAction.runWriteCommandAction(project) {
+                val replacement = host.updateText(updated)
+                assertFalse(InjectedLanguageUtil.isHighlightInjectionBackground(replacement))
+                assertEquals(updated, replacement.text)
+            }
         }
     }
 }
