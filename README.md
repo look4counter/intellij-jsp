@@ -40,13 +40,23 @@ JSP의 Java 함수 호출에서도 같은 조작으로 실제 JSP·JSPF 선언�
 
 `<%@` 다음에는 `page`, `include`, `taglib`를 완성합니다. 각 지시자에 맞는 표준 속성과 boolean·language·buffer·pageEncoding·contentType의 대표 값을 제공합니다. 속성 선택은 필요한 `=""`를 삽입하고 값 입력 위치로 커서를 옮깁니다. 이미 작성한 속성은 반복 가능한 `page import`를 제외하고 중복 제안하지 않습니다. Ctrl+Space로 완성을 호출할 수 있습니다.
 
-tag 파일 전용 지시자, TLD 검색·태그 완성, import 자동 추가와 이름 변경 리팩터링은 이 기능의 범위에 포함하지 않습니다.
+tag 파일 전용 지시자, TLD 검색·태그 완성과 이름 변경 리팩터링은 이 기능의 범위에 포함하지 않습니다.
+
+## Java import 자동 추가
+
+JSP·JSPF의 스크립틀릿·표현식·선언에서 Ctrl+Space로 Java 클래스를 선택하면 현재 파일에 필요한 `<%@ page import="패키지.클래스" %>` 지시자를 추가합니다. 미해결 클래스 이름에서는 Alt+Enter의 `JSP import 추가: 패키지.클래스`를 선택합니다. 동명 클래스는 패키지를 확인해 선택할 수 있습니다.
+
+기존 명시적·와일드카드·include import 및 `java.lang` 해석을 재사용합니다. 이름 충돌 시 완전한 클래스 이름을 사용하며 include 부모 파일은 수정하지 않습니다. HTML·EL·문자열·주석은 대상에서 제외합니다. 정적 import와 import 정리·삭제는 지원하지 않습니다.
+
+`<%@ page import="demo.Widget, demo.Other" %>`에서 클래스 이름을 **Ctrl+클릭**하거나 **Ctrl+B**를 누르면 해당 Java 클래스로 이동합니다. JSP·JSPF의 쉼표 목록·반복 import 속성을 지원하며 프로젝트 클래스와 등록된 라이브러리·중첩 클래스는 기존 Java 탐색 정책을 따릅니다. 와일드카드와 찾을 수 없는 클래스에는 클래스 이동을 제공하지 않습니다.
 
 ## 코드 재정렬
 
 JSP 에디터에서 **Ctrl+Alt+L**로 코드 재정렬을 실행합니다. 전체 파일과 선택 영역에 기존 HTML 및 활성화된 JavaScript·CSS 포매터와 코드 스타일 설정을 적용합니다.
 
 자바 본문에는 기존 Java 포매터와 코드 스타일 설정을 적용합니다. JSP 지시자·주석 및 EL은 내부 공백과 줄바꿈을 보존합니다. JS·CSS 지원이 없는 환경에서도 HTML 재정렬을 사용할 수 있습니다.
+
+독립된 줄의 `page`·`include`·`taglib` 지시자에서 `%>` 뒤 Enter를 누르면 시작 줄의 공백·탭 들여쓰기를 그대로 유지합니다. 최상위 지시자 뒤에는 추가 들여쓰기를 넣지 않습니다. HTML·Java 본문과 지시자 내부 Enter는 기존 처리를 사용합니다.
 
 ## 빌드와 실행
 
@@ -89,5 +99,11 @@ JSP 에디터에서 **Ctrl+Alt+L**로 코드 재정렬을 실행합니다. 전�
 - [include 문맥 검증](specs/007-include-context/quickstart.md)
 - [선언 이동과 지시자 완성 명세](specs/008-navigation-directives/spec.md)
 - [선언 이동과 지시자 완성 검증](specs/008-navigation-directives/quickstart.md)
+- [Java import 자동 추가 명세](specs/009-java-auto-import/spec.md)
+- [Java import 자동 추가 검증](specs/009-java-auto-import/quickstart.md)
+- [import 클래스 이동 명세](specs/011-import-class-navigation/spec.md)
+- [import 클래스 이동 검증](specs/011-import-class-navigation/quickstart.md)
+- [지시자 Enter 들여쓰기 명세](specs/012-directive-enter-indent/spec.md)
+- [지시자 Enter 검증](specs/012-directive-enter-indent/quickstart.md)
 - [JetBrains 파일 유형 등록 문서](https://plugins.jetbrains.com/docs/intellij/registering-file-type.html)
 
