@@ -7,6 +7,13 @@ import com.intellij.codeInsight.completion.CompletionType
 import com.intellij.codeInsight.completion.InsertionContext
 import com.intellij.codeInsight.lookup.LookupElementBuilder
 import com.intellij.openapi.project.DumbAware
+import com.intellij.openapi.project.DumbService
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.codeInsight.AutoPopupController
+import com.intellij.psi.JavaPsiFacade
+import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiFile
+import com.intellij.psi.search.PsiShortNamesCache
 
 class JspDirectiveCompletionContributor : CompletionContributor(), DumbAware {
     override fun fillCompletionVariants(parameters: CompletionParameters, result: CompletionResultSet) {
@@ -21,6 +28,16 @@ class JspDirectiveCompletionContributor : CompletionContributor(), DumbAware {
         val token = text.substring(lexer.tokenStart, lexer.tokenEnd)
         val before = text.substring(lexer.tokenStart + 3, offset)
         val context = context(before) ?: return
+        if (context.kind == Kind.VALUE && context.directive == "page" && context.attribute == "import") {
+            importValues(file, offset, context, result)
+            result.stopHere()
+            return
+        }
+        if (context.kind == Kind.VALUE && context.directive == "include" && context.attribute == "file") {
+            includeValues(file, offset, context, result)
+            result.stopHere()
+            return
+        }
         val matching = result.withPrefixMatcher(context.prefix)
         when (context.kind) {
             Kind.DIRECTIVE -> for (name in ATTRIBUTES.keys) {
@@ -34,14 +51,13 @@ class JspDirectiveCompletionContributor : CompletionContributor(), DumbAware {
                     matching.addElement(LookupElementBuilder.create(name).withInsertHandler { insertion, _ -> insertAttribute(insertion) })
                 }
             }
-            Kind.VALUE -> for (value in values(context.directive, context.attribute)) {
-                matching.addElement(LookupElementBuilder.create(value).withInsertHandler { insertion, _ ->
-                    if (context.quote == null) {
-                        insertion.document.insertString(insertion.tailOffset, "\"")
-                        insertion.document.insertString(insertion.startOffset, "\"")
-                        insertion.editor.caretModel.moveToOffset(insertion.tailOffset)
-                    }
-                })
+            Kind.VALUE -> {
+                val suffix = suffix(text, offset) { it != context.quote && (context.quote != null || !it.isWhitespace()) && it !in "<>" }
+                for (value in values(context.directive, context.attribute)) {
+                    matching.addElement(LookupElementBuilder.create(value).withInsertHandler { insertion, _ ->
+                        insertDynamicValue(insertion, context, offset - context.prefix.length, suffix, value)
+                    })
+                }
             }
         }
         result.stopHere()
@@ -74,6 +90,95 @@ class JspDirectiveCompletionContributor : CompletionContributor(), DumbAware {
             }
         }
         if (context.completionChar == '=' || context.completionChar == ' ') context.setAddCompletionChar(false)
+        AutoPopupController.getInstance(context.project).scheduleAutoPopup(context.editor)
+    }
+
+    private fun importValues(file: PsiFile, offset: Int, context: Context, result: CompletionResultSet) {
+        if (DumbService.isDumb(file.project)) return
+        val prefix = context.prefix.substringAfterLast(',').trimStart()
+        val matching = result.withPrefixMatcher(prefix)
+        val start = offset - prefix.length
+        val suffix = suffix(file.text, offset) { Character.isJavaIdentifierPart(it) || it == '.' }
+        val facade = JavaPsiFacade.getInstance(file.project)
+        val scope = file.resolveScope
+        val packageName = prefix.substringBeforeLast('.', "")
+        val emitted = mutableSetOf<String>()
+        fun addClass(target: PsiClass) {
+            ProgressManager.checkCanceled()
+            val name = target.qualifiedName ?: return
+            if (!emitted.add(name) || !facade.resolveHelper.isAccessible(target, file, null)) return
+            matching.addElement(LookupElementBuilder.create(target, name).withLookupString(target.name.orEmpty())
+                .withPresentableText(target.name.orEmpty()).withTypeText(name.substringBeforeLast('.'))
+                .withInsertHandler { insertion, _ -> insertDynamicValue(insertion, context, start, suffix, name) })
+        }
+        val pkg = facade.findPackage(packageName)
+        for (child in pkg?.getSubPackages(scope).orEmpty()) {
+            ProgressManager.checkCanceled()
+            val name = child.qualifiedName
+            matching.addElement(LookupElementBuilder.create(name).withTypeText("패키지")
+                .withInsertHandler { insertion, _ -> insertDynamicValue(insertion, context, start, suffix, "$name.", true) })
+        }
+        if ('.' in prefix) {
+            pkg?.getClasses(scope)?.forEach(::addClass)
+            facade.findClass(packageName, scope)?.innerClasses?.forEach(::addClass)
+        } else if (prefix.isNotEmpty()) {
+            val cache = PsiShortNamesCache.getInstance(file.project)
+            val names = mutableListOf<String>()
+            cache.processAllClassNames({ name ->
+                ProgressManager.checkCanceled()
+                if (matching.prefixMatcher.prefixMatches(name)) names += name
+                true
+            }, scope, null)
+            for (name in names) {
+                ProgressManager.checkCanceled()
+                cache.getClassesByName(name, scope).forEach(::addClass)
+            }
+        }
+    }
+
+    private fun includeValues(file: PsiFile, offset: Int, context: Context, result: CompletionResultSet) {
+        val source = file.originalFile.virtualFile ?: return
+        val directoryPath = context.prefix.substringBeforeLast('/', "").let {
+            if ('/' in context.prefix) "$it/" else ""
+        }
+        val directory = JspIncludeContext.resolveInclude(source, directoryPath, file.project, directory = true) ?: return
+        val prefix = context.prefix.substringAfterLast('/')
+        val matching = result.withPrefixMatcher(prefix)
+        val start = offset - prefix.length
+        val suffix = suffix(file.text, offset) { it != '/' && it != context.quote && (context.quote != null || !it.isWhitespace()) && it !in "<>" }
+        for (child in directory.children.orEmpty()) {
+            ProgressManager.checkCanceled()
+            if (child.name.contains(context.quote ?: '"')) continue
+            val name = child.name + if (child.isDirectory) "/" else ""
+            matching.addElement(LookupElementBuilder.create(name).withTypeText(if (child.isDirectory) "폴더" else "파일")
+                .withInsertHandler { insertion, _ -> insertDynamicValue(insertion, context, start, suffix, name, child.isDirectory) })
+        }
+    }
+
+    private fun suffix(text: String, offset: Int, accepts: (Char) -> Boolean): String {
+        var end = offset
+        while (end < text.length && accepts(text[end])) end++
+        return text.substring(offset, end)
+    }
+
+    private fun insertDynamicValue(
+        insertion: InsertionContext, context: Context, start: Int, suffix: String, value: String, next: Boolean = false,
+    ) {
+        val document = insertion.document
+        var end = insertion.tailOffset
+        if (document.charsSequence.subSequence(end, (end + suffix.length).coerceAtMost(document.textLength)).toString() == suffix) end += suffix.length
+        if (value.endsWith('/') && end < document.textLength && document.charsSequence[end] == '/') end++
+        document.replaceString(start, end, value)
+        var tail = start + value.length
+        if (context.quote == null) {
+            document.insertString(tail, "\"")
+            document.insertString(start, "\"")
+            tail++
+        }
+        insertion.tailOffset = tail
+        insertion.editor.caretModel.moveToOffset(tail)
+        if (next && insertion.completionChar == value.last()) insertion.setAddCompletionChar(false)
+        if (next) AutoPopupController.getInstance(insertion.project).scheduleAutoPopup(insertion.editor)
     }
 
     private enum class Kind { DIRECTIVE, ATTRIBUTE, VALUE }

@@ -30,6 +30,7 @@
     <!-- Extensions defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
+        <typedHandler implementation="com.look4counter.jsp.JspDirectiveAutoPopupHandler"/>
         <enterHandlerDelegate implementation="com.look4counter.jsp.JspDirectiveEnterHandler" order="first"/>
         <completion.contributor language="JAVA" implementationClass="com.look4counter.jsp.JspJavaImportCompletionContributor" order="first"/>
         <codeInsight.unresolvedReferenceQuickFixProvider implementation="com.look4counter.jsp.JspJavaImportQuickFixProvider"/>
@@ -37,6 +38,7 @@
         <completion.contributor language="CommunityJSP" implementationClass="com.look4counter.jsp.JspDirectiveCompletionContributor"/>
         <multiHostInjector implementation="com.look4counter.jsp.JspJavaInjector"/>
         <preFormatProcessor implementation="com.look4counter.jsp.JspJavaPreFormatProcessor"/>
+        <postFormatProcessor implementation="com.look4counter.jsp.JspDeclarationPostFormatProcessor"/>
         <fileType name="Community JSP" implementationClass="com.look4counter.jsp.JspFileType"
                   fieldName="INSTANCE" language="CommunityJSP" extensions="jsp;jspf"/>
         <editorHighlighterProvider filetype="Community JSP"

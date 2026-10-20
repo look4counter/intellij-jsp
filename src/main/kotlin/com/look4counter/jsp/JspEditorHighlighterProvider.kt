@@ -19,6 +19,7 @@ class JspEditorHighlighterProvider : EditorHighlighterProvider {
     ): EditorHighlighter = LayeredLexerEditorHighlighter(JspSyntaxHighlighter(), colors).apply {
         // Keep host fragments in one HTML document, including embedded JS/CSS when available.
         registerLayer(JspTokenTypes.HTML_TEXT, LayerDescriptor(HtmlFileHighlighter(), ""))
+        registerLayer(JspTokenTypes.DIRECTIVE, LayerDescriptor(JspDirectiveSyntaxHighlighter(), "\n"))
         for (type in JspParserDefinition.JAVA_TOKENS) {
             registerLayer(type, LayerDescriptor(JspJavaSyntaxHighlighter(type), "\n"))
         }

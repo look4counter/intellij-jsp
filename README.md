@@ -40,6 +40,8 @@ JSP의 Java 함수 호출에서도 같은 조작으로 실제 JSP·JSPF 선언�
 
 `<%@` 다음에는 `page`, `include`, `taglib`를 완성합니다. 각 지시자에 맞는 표준 속성과 boolean·language·buffer·pageEncoding·contentType의 대표 값을 제공합니다. 속성 선택은 필요한 `=""`를 삽입하고 값 입력 위치로 커서를 옮깁니다. 이미 작성한 속성은 반복 가능한 `page import`를 제외하고 중복 제안하지 않습니다. Ctrl+Space로 완성을 호출할 수 있습니다.
 
+지시자는 `<%@`·`%>` 구분자, 지시자 이름, 속성 이름, 등호, 문자열 값을 각각 테마에 맞는 색상으로 표시합니다. `page import`에서는 프로젝트·라이브러리 클래스와 패키지를, `include file`에서는 상대·상위·웹 루트 경로의 파일과 폴더를 완성합니다. 쉼표 목록의 현재 항목과 경로의 마지막 요소만 교체합니다. 따옴표·점·쉼표·슬래시 입력 및 속성 선택 뒤에도 완성창을 이어서 호출합니다.
+
 tag 파일 전용 지시자, TLD 검색·태그 완성과 이름 변경 리팩터링은 이 기능의 범위에 포함하지 않습니다.
 
 ## Java import 자동 추가
@@ -53,6 +55,10 @@ JSP·JSPF의 스크립틀릿·표현식·선언에서 Ctrl+Space로 Java 클래�
 ## 코드 재정렬
 
 JSP 에디터에서 **Ctrl+Alt+L**로 코드 재정렬을 실행합니다. 전체 파일과 선택 영역에 기존 HTML 및 활성화된 JavaScript·CSS 포매터와 코드 스타일 설정을 적용합니다.
+
+최상위의 연속된 JSP 지시자는 0열로 정렬하며, 기존에 잘못 추가된 들여쓰기도 제거합니다. HTML 내부의 지시자는 부모 HTML 구조와 HTML 들여쓰기 설정을 따릅니다.
+
+독립된 여러 줄 `<%! ... %>` 선언부는 시작·종료 구분자를 같은 열로 정렬하고, Java 멤버를 한 단계 들여씁니다. 함수 본문과 인자·중괄호에는 Java 코드 스타일을 적용합니다. HTML 내부에서는 부모 HTML 위치를 기준으로 정렬하며, 선언부 일부만 선택하면 선택 밖의 공백을 보존합니다.
 
 자바 본문에는 기존 Java 포매터와 코드 스타일 설정을 적용합니다. JSP 지시자·주석 및 EL은 내부 공백과 줄바꿈을 보존합니다. JS·CSS 지원이 없는 환경에서도 HTML 재정렬을 사용할 수 있습니다.
 
@@ -105,5 +111,7 @@ JSP 에디터에서 **Ctrl+Alt+L**로 코드 재정렬을 실행합니다. 전�
 - [import 클래스 이동 검증](specs/011-import-class-navigation/quickstart.md)
 - [지시자 Enter 들여쓰기 명세](specs/012-directive-enter-indent/spec.md)
 - [지시자 Enter 검증](specs/012-directive-enter-indent/quickstart.md)
+- [지시자 세부 색상·완성 명세](specs/013-directive-colors-completion/spec.md)
+- [지시자 세부 색상·완성 검증](specs/013-directive-colors-completion/quickstart.md)
 - [JetBrains 파일 유형 등록 문서](https://plugins.jetbrains.com/docs/intellij/registering-file-type.html)
 

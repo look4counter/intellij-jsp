@@ -130,15 +130,16 @@ object JspIncludeContext {
 
     private fun directive(token: String) = JspDirectiveSyntax.parse(token, requireClosed = true)
 
-    internal fun resolveInclude(source: VirtualFile, path: String?, project: Project): VirtualFile? {
-        if (path.isNullOrEmpty() || path.contains("\${") || path.contains("#{") || path.contains("<%")) return null
+    internal fun resolveInclude(source: VirtualFile, path: String?, project: Project, directory: Boolean = false): VirtualFile? {
+        if (path == null || (!directory && path.isEmpty()) || path.contains("\${") || path.contains("#{") || path.contains("<%")) return null
         val decoded = try { URLDecoder.decode(path.replace("+", "%2B"), StandardCharsets.UTF_8) }
             catch (_: IllegalArgumentException) { return null }
         if (decoded.any { it in "\\:?#\u0000" }) return null
         val content = ProjectFileIndex.getInstance(project).getContentRootForFile(source)
         val base = if (decoded.startsWith('/')) webRoot(source, content) else source.parent
-        val target = base?.findFileByRelativePath(decoded.removePrefix("/")) ?: return null
-        if (target.isDirectory || (content != null && !VfsUtilCore.isAncestor(content, target, false))) return null
+        val relative = decoded.removePrefix("/")
+        val target = (if (relative.isEmpty()) base else base?.findFileByRelativePath(relative)) ?: return null
+        if (target.isDirectory != directory || (content != null && !VfsUtilCore.isAncestor(content, target, false))) return null
         return target
     }
 
