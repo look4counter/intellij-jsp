@@ -39,7 +39,8 @@ class JspParserDefinition : ParserDefinition {
     override fun getStringLiteralElements(): TokenSet = TokenSet.EMPTY
     override fun createElement(node: ASTNode): PsiElement =
         when (node.elementType) {
-            JAVA_HOST -> JspJavaInjectionHost(node)
+            JAVA_HOST -> if (node.firstChildNode?.elementType == JspTokenTypes.DECLARATION)
+                JspDeclarationInjectionHost(node) else JspJavaInjectionHost(node)
             DIRECTIVE_HOST -> JspDirective(node)
             else -> ASTWrapperPsiElement(node)
         }

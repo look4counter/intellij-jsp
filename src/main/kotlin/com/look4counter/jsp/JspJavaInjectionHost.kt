@@ -6,8 +6,9 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.psi.LiteralTextEscaper
 import com.intellij.psi.PsiFileFactory
 import com.intellij.psi.PsiLanguageInjectionHost
+import com.intellij.psi.impl.source.tree.injected.InjectionBackgroundSuppressor
 
-class JspJavaInjectionHost(node: ASTNode) : ASTWrapperPsiElement(node), PsiLanguageInjectionHost {
+open class JspJavaInjectionHost(node: ASTNode) : ASTWrapperPsiElement(node), PsiLanguageInjectionHost {
     val kind get() = node.firstChildNode.elementType
     val bodyRange: TextRange
         get() {
@@ -26,3 +27,5 @@ class JspJavaInjectionHost(node: ASTNode) : ASTWrapperPsiElement(node), PsiLangu
         return replace(replacement) as PsiLanguageInjectionHost
     }
 }
+
+class JspDeclarationInjectionHost(node: ASTNode) : JspJavaInjectionHost(node), InjectionBackgroundSuppressor
